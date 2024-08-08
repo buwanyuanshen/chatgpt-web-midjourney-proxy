@@ -14,10 +14,7 @@ const chatSet = new chatSetting( uuid==null?1002:uuid);
 const nGptStore = ref(  chatSet.getGptConfig() );
 
 const config = ref({
-model:[ 'gpt-4-turbo-2024-04-09','gpt-4o-2024-08-06','gpt-4o-2024-05-13','gpt-4o-mini-2024-07-18','gpt-4o-mini','gpt-4o','gpt-4-turbo','gpt-4-0125-preview','gpt-3.5-turbo',`gpt-4-1106-preview`,`gpt-3.5-turbo-16k`,'gpt-4','gpt-4-0613','gpt-4-32k-0613' ,'gpt-4-32k','gpt-4-32k-0314',`gpt-3.5-turbo-16k-0613`
-,`gpt-4-vision-preview`,`gpt-3.5-turbo-1106` ,'gpt-3.5-turbo-0125'
-,'gpt-3.5-turbo-0301','gpt-3.5-turbo-0613','gpt-4-all','gpt-3.5-net','gemini-pro',"gemini-pro-vision",'gemini-pro-1.5'
-,'claude-3-sonnet-20240229','claude-3-opus-20240229','claude-3-haiku-20240307','claude-3-5-sonnet-20240620','suno-v3'
+model:[
 ]
 ,maxToken:4096
 }); 
@@ -83,19 +80,30 @@ const saveChat=(type:string)=>{
      emit('close');
 }
  
-watch(()=>nGptStore.value.model,(n)=>{
-    nGptStore.value.gpts=undefined;
-    let max=4096*2*2;
-    if( n.indexOf('vision')>-1){
-        max=4096*2;
-    }else if( n=='gpt-4o-2024-08-06' ){  
-        max=16384 *2;
-    }else if( n.indexOf('gpt-4')>-1 ||  n.indexOf('16k')>-1 ){ //['16k','8k','32k','gpt-4'].indexOf(n)>-1
-        max=4096*2;
-    }else if( n.toLowerCase().includes('claude-3') ){
-         max=4096*2;
+watch(() => nGptStore.value.model, (n) => {
+    nGptStore.value.gpts = undefined;
+    let max = 4096;
+    let model = n.toLowerCase();
+    if (model.includes('4k')) {
+        max = 4096;
+    } else if (model.includes('8k')) {
+        max = 8192;
+    } else if (model.includes('16k')) {
+        max = 16384;
+    } else if (model.includes('32k')) {
+        max = 32768;
+    } else if (model.includes('vision')) {
+        max = 4096;
+    } else if (model === 'gpt-4') {
+        max = 8192;
+    } else if (model.includes('claude-3')) {
+        max = 2000000;
+    } else if (model.includes('claude-2')) {
+        max = 1000000;
+    } else {
+        max = 4096; // Default value if none of the specific conditions are met
     }
-    config.value.maxToken=max/2;
+    config.value.maxToken=max;
     if(nGptStore.value.max_tokens> config.value.maxToken ) nGptStore.value.max_tokens= config.value.maxToken;
 })
 
@@ -131,7 +139,7 @@ onMounted(() => {
      <div> {{ $t('mjchat.historyCnt') }}
      </div>
      <div class=" flex justify-end items-center w-[80%] max-w-[240px]">
-        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.talkCount" :step="1" :max="50" /></div>
+        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.talkCount" :step="1" :max="200" /></div>
         <div  class="w-[50px] text-right">{{ nGptStore.talkCount }}</div>
     </div>
 </section>
@@ -141,7 +149,7 @@ onMounted(() => {
      <div> {{ $t('mjchat.historyTCnt') }} 
      </div>
      <div class=" flex justify-end items-center w-[80%] max-w-[240px]">
-        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.max_tokens" :step="1" :max="config.maxToken" :min="1" /></div>
+        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.max_tokens" :step="100" :max="config.maxToken" :min="100" /></div>
         <div  class="w-[50px] text-right">{{ nGptStore.max_tokens }}</div>
     </div>
 </section>
@@ -159,7 +167,7 @@ onMounted(() => {
     <section class=" flex justify-between items-center "  >
         <div>{{ $t('mj.temperature') }}</div>
         <div class=" flex justify-end items-center w-[80%] max-w-[240px]">
-            <div class=" w-[200px]"><n-slider v-model:value="nGptStore.temperature" :step="0.01" :max="1" /></div>
+            <div class=" w-[200px]"><n-slider v-model:value="nGptStore.temperature" :step="0.1" :max="2" /></div>
             <div  class="w-[40px] text-right">{{ nGptStore.temperature }}</div>
         </div>
     </section>
