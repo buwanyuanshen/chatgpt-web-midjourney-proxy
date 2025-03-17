@@ -18,15 +18,7 @@ const chatSet = new chatSetting( uuid==null?1002:uuid);
 const nGptStore = ref(  chatSet.getGptConfig() );
 
 const config = ref({
-model:[ 'o1','o1-2024-12-17', 'gpt-4-turbo-2024-04-09','o1-preview','o1-mini','o1-preview-2024-09-12','o1-mini-2024-09-12','chatgpt-4o-latest','gpt-4o-2024-11-20','gpt-4o-2024-08-06','gpt-4o-2024-05-13','gpt-4o-mini-2024-07-18','gpt-4o-mini','gpt-4o','gpt-4-turbo','gpt-4-0125-preview','gpt-3.5-turbo',`gpt-4-1106-preview`,`gpt-3.5-turbo-16k`,'gpt-4','gpt-4-0613','gpt-4-32k-0613' ,'gpt-4-32k','gpt-4-32k-0314',`gpt-3.5-turbo-16k-0613`
-,`gpt-4-vision-preview`,`gpt-3.5-turbo-1106` ,'gpt-3.5-turbo-0125'
-,'gpt-3.5-turbo-0301','gpt-3.5-turbo-0613','gpt-4-all','gpt-3.5-net'
-,'gemini-pro',"gemini-pro-vision",'gemini-pro-1.5',"gemini-1.5-pro-exp-0801"
-,'claude-3-7-sonnet-20250219'
-,'claude-3-5-sonnet-20241022','claude-3-sonnet-20240229','claude-3-opus-20240229','claude-3-haiku-20240307','claude-3-5-sonnet-20240620','suno-v3'
-,'deepseek-r1','deepseek-v3'
-,'grok-3','grok-3-reasoner','grok-3-deepsearch'
-,'gpt-4.5-preview-2025-02-27','gpt-4.5-preview'
+model:[
 ]
 ,maxToken:4096
 }); 
@@ -92,28 +84,41 @@ const saveChat=(type:string)=>{
      emit('close');
 }
  
-watch(()=>nGptStore.value.model,(n)=>{
-    nGptStore.value.gpts=undefined;
-    let max=4096*2*2;
-    if( n.indexOf('vision')>-1){
-        max=4096*2;
-    }else if(  n.indexOf('o1-mini')>-1){  
-        max=65536 *2;
-    }else if(  n.indexOf('o1-')>-1 || n=='o1' ){  
-        max=65536 ;
-    }else if( n=='gpt-4o-2024-08-06' || n=='chatgpt-4o-latest' || n.indexOf('gpt-4o')>-1 || n.indexOf('gpt-4.5')>-1){  
-        max=16384 *2;
-    }else if( n.indexOf('gpt-4')>-1 ||  n.indexOf('16k')>-1 ||  n.indexOf('o1-')>-1 ){ //['16k','8k','32k','gpt-4'].indexOf(n)>-1
-        max=4096*2;
-    }else if( n.toLowerCase().includes('claude-3-5')|| n.toLowerCase().includes('sonnet') 
-        ||n.toLowerCase().includes('grok-3')
-     ||  n.toLowerCase().includes('deepseek') ){ //deepseek
-        max=4096*2*2;
-    }else if( n.toLowerCase().includes('claude-3') ){
-         max=4096*2;
+watch(() => nGptStore.value.model, (n) => {
+    nGptStore.value.gpts = undefined;
+    let max = 4096;
+    let model = n.toLowerCase();
+    if (model.includes('4k')) {
+        max = 4096;
+    } else if (model.includes('8k')) {
+        max = 8192;
+    } else if (model.includes('16k')) {
+        max = 16384;
+    } else if (model.includes('32k')) {
+        max = 32768;
+    } else if (model.includes('vision')) {
+        max = 4096;
+    } else if (model === 'gpt-4') {
+        max = 8192;
+    } else if (model.includes('claude-3')) {
+        max = 2000000;
+    } else if (model.includes('claude-2')) {
+        max = 1000000;
+		} else if (model.includes('gemini-1.5-pro')) {
+        max = 20000000;
+		} else if (model.includes('gemini-1.5-flash')) {
+        max = 10000000;
+		} else if (model.includes('gemini-1.0-pro')) {
+        max = 32000;
+		} else if (model.includes('gemini-pro')) {
+        max = 32000;
+    } else if (model.includes('gemini-2.0')) {
+        max = 1000000;
+    }else {
+        max = 4096; // Default value if none of the specific conditions are met
     }
 
-    config.value.maxToken=max/2;
+    config.value.maxToken=max;
     if(nGptStore.value.max_tokens> config.value.maxToken ) nGptStore.value.max_tokens= config.value.maxToken;
 })
 
@@ -178,7 +183,7 @@ const serverSuccess=(s:any)=>{
      <div> {{ $t('mjchat.historyCnt') }}
      </div>
      <div class=" flex justify-end items-center w-[80%] max-w-[240px]">
-        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.talkCount" :step="1" :max="50" /></div>
+        <div class=" w-[200px]"><n-slider v-model:value="nGptStore.talkCount" :step="1" :max="100000" /></div>
         <div  class="w-[50px] text-right">{{ nGptStore.talkCount }}</div>
     </div>
 </section>
